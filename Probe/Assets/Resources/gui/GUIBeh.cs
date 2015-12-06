@@ -10,9 +10,21 @@ public class GUIBeh : MonoBehaviour {
 	
 	void OnGUI()
 	{
-		if(GUI.Button(new Rect(20,20,100,30),"",startSkin.button))
+		if(GUI.Button(new Rect(60,20,40,40),"Up"))
 		{
-			//ACTION
+			Physics2D.gravity=new Vector2(0,5);
+		}
+		if(GUI.Button(new Rect(20,60,40,40),"Left"))
+		{
+			Physics2D.gravity=new Vector2(-5,0);
+		}
+		if(GUI.Button(new Rect(100,60,40,40),"Right"))
+		{
+			Physics2D.gravity=new Vector2(5,0);
+		}
+		if(GUI.Button(new Rect(60,100,40,40),"Down"))
+		{
+			Physics2D.gravity=new Vector2(0,-5);
 		}
 	}
 }
