@@ -7,4 +7,5 @@ public static class GameOptions{
 	
 	public const float CAMERA_TOUCH_ROTATE_SPEED = 0.5f;
 	
+	public const float GRAVITY_VALUE = 5f;
 }

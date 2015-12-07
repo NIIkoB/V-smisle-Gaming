@@ -5,7 +5,7 @@ public class BotBeh : MonoBehaviour {
 
 	GameObject chainElement;
 	GameObject lastElement;
-	public GameObject groundElement;
+	GameObject groundElement;
 	
 	bool mouseReleased=false;
 	
@@ -20,15 +20,34 @@ public class BotBeh : MonoBehaviour {
 	void Start () {
 		int i;
 		lastElement=gameObject;
+		HingeJoint2D hinge;
 		for(i=0;i<25;i++)
 		{
-			chainElement=(GameObject) Instantiate(Resources.Load("prefabs/chainElement"),transform.position+new Vector3(0,4.4f+0.25f*(i+1),0),Quaternion.identity);
-			lastElement.GetComponent<HingeJoint2D>().connectedBody=chainElement.GetComponent<Rigidbody2D>();
+			chainElement=(GameObject) Instantiate(Resources.Load("prefabs/chainElement"),transform.position+new Vector3(0,-0.5f-0.25f*(i+1),0),Quaternion.identity);
+			chainElement.transform.parent=gameObject.transform;
+			
+			hinge = lastElement.GetComponent<HingeJoint2D>();
+			hinge.connectedBody= chainElement.GetComponent<Rigidbody2D>();
+			hinge.anchor = new Vector2(0,-0.5f);
+			hinge.connectedAnchor = new Vector2(0,0.5f);
+			hinge.enabled=true;
 			
 			lastElement=chainElement;
 		}
-		lastElement.GetComponent<HingeJoint2D>().connectedBody=groundElement.GetComponent<Rigidbody2D>();
-		Physics2D.gravity=new Vector2(0,-1);
+		
+		groundElement=(GameObject) Instantiate(Resources.Load("prefabs/botiscaph"),transform.position+new Vector3(0,-0.5f-0.25f*(i+1),0),Quaternion.identity);
+			
+		groundElement.transform.parent=transform;
+		
+		hinge = lastElement.GetComponent<HingeJoint2D>();
+		hinge.connectedBody=groundElement.GetComponent<Rigidbody2D>();
+		hinge.anchor = new Vector2(0,-0.5f);
+		hinge.connectedAnchor = new Vector2(0,3f);
+		hinge.enabled=true;
+		
+		
+		
+		Physics2D.gravity=new Vector2(0,-GameOptions.GRAVITY_VALUE);
 		Camera.main.orthographicSize=GameOptions.IN_GAME_ZOOM;
 	}
 	
@@ -57,6 +76,7 @@ public class BotBeh : MonoBehaviour {
 				
 				gravityVec = new Vector2(Camera.main.ScreenToWorldPoint(new Vector3(Screen.width*0.5f,Screen.height,0)).x,Camera.main.ScreenToWorldPoint(new Vector3(Screen.width*0.5f,Screen.height,0)).y)-new Vector2(transform.position.x,transform.position.y);
 				gravityVec/=gravityVec.magnitude;
+				gravityVec*=GameOptions.GRAVITY_VALUE;
 				Physics2D.gravity=-gravityVec;
 			}
 		}
