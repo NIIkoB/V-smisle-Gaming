@@ -28,7 +28,7 @@ public class BotBeh : MonoBehaviour {
 			lastElement=chainElement;
 		}
 		lastElement.GetComponent<HingeJoint2D>().connectedBody=groundElement.GetComponent<Rigidbody2D>();
-		
+		Physics2D.gravity=new Vector2(0,1);
 		Camera.main.orthographicSize=GameOptions.IN_GAME_ZOOM;
 	}
 	
@@ -43,7 +43,7 @@ public class BotBeh : MonoBehaviour {
 		currentTouch=Input.mousePosition;
 		if(mouseReleased)
 		{
-			if(currentTouch.x>=Screen.width*0.6f && lastTouch.x >= Screen.width*0.6f)
+			if(currentTouch.x>=Screen.width*0.5f && lastTouch.x >= Screen.width*0.5f)
 			{
 				tmp=currentTouch-lastTouch;
 				if(tmp.magnitude>20) {tmp/=tmp.magnitude*20;}
