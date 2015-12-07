@@ -28,7 +28,7 @@ public class BotBeh : MonoBehaviour {
 			lastElement=chainElement;
 		}
 		lastElement.GetComponent<HingeJoint2D>().connectedBody=groundElement.GetComponent<Rigidbody2D>();
-		Physics2D.gravity=new Vector2(0,1);
+		Physics2D.gravity=new Vector2(0,-1);
 		Camera.main.orthographicSize=GameOptions.IN_GAME_ZOOM;
 	}
 	
