@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections;
-using PicoGames.QuickRopes;
 
 public class BotBeh : MonoBehaviour {
 	public GameObject ground;
@@ -113,7 +112,7 @@ public class BotBeh : MonoBehaviour {
 		}
 		else
 		{
-			//attachedChainElement.transform.rotation=end.transform.rotation;
+			attachedChainElement.transform.rotation=end.transform.rotation;
 			Vector2 z = Quaternion.Euler(0,0,end.transform.eulerAngles.z)*new Vector2(0,-0.0415f);
 			end.transform.position = end.transform.position+new Vector3(z.x,z.y,0);
 			hinge=end.GetComponent<HingeJoint2D>();
@@ -174,24 +173,6 @@ public class BotBeh : MonoBehaviour {
 		
 		
 		DrawLine();
-//		rope.velocityAccel = acceleration;
-//		rope.velocityDampen = dampening;
-//		
-//      	if (Input.GetKey(KeyCode.UpArrow))
-//      	{
-//      		rope.Velocity = maxSpeed;
-//      		rope.canResize=true;
-//      	}
-//  		else if (Input.GetKey(KeyCode.DownArrow))
-//  		{
-//  			rope.Velocity = -2*maxSpeed;
-//  			rope.canResize=true;
-//  		}
-//		else
-//      	{
-//      		rope.Velocity = 0;
-//      		rope.canResize=false;
-//      	}
 
 		if(Input.GetKey(KeyCode.DownArrow))
 		{
@@ -199,9 +180,6 @@ public class BotBeh : MonoBehaviour {
 		}
 		if(Input.GetKey(KeyCode.UpArrow))
 			Revert();
-		
-		//if(Input.GetKeyDown(KeyCode.UpArrow))
-			//Revert();
 		
 		if(Input.GetKey(KeyCode.LeftArrow))
 			cameraAngle-=1.5f;
