@@ -1,85 +1,220 @@
 ﻿using UnityEngine;
 using System.Collections;
+using PicoGames.QuickRopes;
 
 public class BotBeh : MonoBehaviour {
-
-	GameObject chainElement;
-	GameObject lastElement;
-	GameObject groundElement;
-	
-	bool mouseReleased=false;
-	
-	Vector3 lastTouch;
-	Vector3 currentTouch;
-	Vector3 tmp;
+	public GameObject ground;
+	public GameObject end;
+	GameObject cur;
 	Vector2 gravityVec;
-	float rotateVal;
-	
 	float cameraAngle=0f;
+	private HingeJoint2D hinge;
+	private DistanceJoint2D dist;
 	
-	void Start () {
-		int i;
-		lastElement=gameObject;
-		HingeJoint2D hinge;
-		for(i=0;i<25;i++)
-		{
-			chainElement=(GameObject) Instantiate(Resources.Load("prefabs/chainElement"),transform.position+new Vector3(0,-0.5f-0.25f*(i+1),0),Quaternion.identity);
-			chainElement.transform.parent=gameObject.transform;
-			
-			hinge = lastElement.GetComponent<HingeJoint2D>();
-			hinge.connectedBody= chainElement.GetComponent<Rigidbody2D>();
-			hinge.anchor = new Vector2(0,-0.5f);
-			hinge.connectedAnchor = new Vector2(0,0.5f);
-			hinge.enabled=true;
-			
-			lastElement=chainElement;
-		}
-		
-		groundElement=(GameObject) Instantiate(Resources.Load("prefabs/botiscaph"),transform.position+new Vector3(0,-0.5f-0.25f*(i+1),0),Quaternion.identity);
-			
-		groundElement.transform.parent=transform;
-		
-		hinge = lastElement.GetComponent<HingeJoint2D>();
-		hinge.connectedBody=groundElement.GetComponent<Rigidbody2D>();
-		hinge.anchor = new Vector2(0,-0.5f);
-		hinge.connectedAnchor = new Vector2(0,3f);
-		hinge.enabled=true;
-		
-		
-		
-		Physics2D.gravity=new Vector2(0,-GameOptions.GRAVITY_VALUE);
-		Camera.main.orthographicSize=GameOptions.IN_GAME_ZOOM;
+	private ChainElement first=null,last=null,tmp;
+	private int chainCount=0;
+	
+	private GameObject attachedChainElement;
+	private float attachedDist=1;
+	private LineRenderer line;
+	
+	private Vector2 test1,test2;
+	
+	class ChainElement
+	{
+		public ChainElement prev;
+		public ChainElement next;
+		public GameObject go;
 	}
 	
-	void Update()
-	{
-		Camera.main.transform.position=new Vector3(transform.position.x,transform.position.y,-10);
-		if(Input.GetMouseButtonDown(0))
-			mouseReleased=true;
-		if(Input.GetMouseButtonUp(0))
-			mouseReleased=false;
-		
-		currentTouch=Input.mousePosition;
-		if(mouseReleased)
+	void Start () {
+		last = new ChainElement();
+		last.go=ground;
+		last.next=null;
+		last.prev=null;
+		Physics2D.velocityIterations=70;
+		Physics2D.positionIterations=70;
+		for(int i = 0;i<3;i++)
 		{
-			if(currentTouch.x>=Screen.width*0.5f && lastTouch.x >= Screen.width*0.5f)
+			cur=(GameObject) Instantiate(Resources.Load("prefabs/chainElement"),new Vector3(0,-0.5f-(i-GameOptions.CHAIN_LEN/2),1),Quaternion.identity);
+			cur.transform.localScale=new Vector3(0.1f,GameOptions.CHAIN_LEN,1);
+			cur.GetComponent<Rigidbody2D>().mass=20.0f;
+			hinge = cur.GetComponent<HingeJoint2D>();
+			hinge.anchor=new Vector2(0,0.5f);
+			hinge.connectedAnchor=new Vector2(0,-0.5f);
+			hinge.connectedBody=last.go.GetComponent<Rigidbody2D>();
+			
+			dist = cur.GetComponent<DistanceJoint2D>();
+			dist.anchor=new Vector2(0,0.5f);
+			dist.connectedAnchor=new Vector2(0,1.47f);
+			dist.connectedBody=last.go.GetComponent<Rigidbody2D>();
+			
+			tmp = new ChainElement();
+			tmp.go=cur;
+			last.next=tmp;
+			tmp.prev=last;
+			tmp.next=null;
+			last=tmp;
+			if(first==null)
 			{
-				tmp=currentTouch-lastTouch;
-				if(tmp.magnitude>20) {tmp/=tmp.magnitude*20;}
-				if(currentTouch.magnitude>lastTouch.magnitude)
-					rotateVal=-tmp.magnitude;	
-				else
-					rotateVal=tmp.magnitude;
-				cameraAngle+=rotateVal*GameOptions.CAMERA_TOUCH_ROTATE_SPEED;
-				cameraAngle=Mathf.Repeat(cameraAngle,360.0f);
-				Camera.main.transform.localEulerAngles=new Vector3(0,0,cameraAngle);
+				first=tmp;
+				first.prev=null;
+			}
+			
+			if(tmp.prev!=null)
+				tmp.go.GetComponent<ChainELementBeh>().prev=tmp.prev.go;
+			
+			
+			chainCount++;
+		}
+		
+		
+		
+		hinge = end.GetComponent<HingeJoint2D>();
+		hinge.anchor=new Vector2(0,4.4f);
+		hinge.connectedAnchor=new Vector2(0,-0.5f);
+		hinge.connectedBody=last.go.GetComponent<Rigidbody2D>();
+		
+		line = end.GetComponent<LineRenderer>();
+		dist = first.go.GetComponent<DistanceJoint2D>();
+		dist.anchor=new Vector2(0,0.48f);
+		dist.connectedAnchor=new Vector2(0,-0.48f);
+	}
+	
+	void Expand()
+	{
+		attachedDist+=0.08f;
+		if(attachedDist>=1)
+		{
+			Vector2 f = Quaternion.Euler(0,0,end.transform.eulerAngles.z)*new Vector2(0,0.5f);
+			cur = (GameObject) Instantiate(Resources.Load("prefabs/chainElement"),end.transform.position+new Vector3(f.x,f.y,0),end.transform.rotation);
+			cur.transform.localScale=new Vector3(0.1f,GameOptions.CHAIN_LEN,1);
+			cur.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeRotation;
+			cur.GetComponent<Rigidbody2D>().mass=20.0f;
+			last.go.GetComponent<Rigidbody2D>().constraints=RigidbodyConstraints2D.None;
+			
+			hinge = end.GetComponent<HingeJoint2D>();
+			hinge.connectedAnchor=new Vector2(0,0.5f);
+			hinge.connectedBody = cur.GetComponent<Rigidbody2D>();
+			
+			hinge = cur.GetComponent<HingeJoint2D>();
+			hinge.connectedBody=last.go.GetComponent<Rigidbody2D>();
+			
+			tmp = new ChainElement();
+			tmp.go=cur;
+			last.next=tmp;
+			tmp.prev=last;
+			tmp.next=null;
+			last=tmp;
+			
+			attachedChainElement=cur;
+			attachedDist=0;
+			chainCount++;
+		}
+		else
+		{
+			//attachedChainElement.transform.rotation=end.transform.rotation;
+			Vector2 z = Quaternion.Euler(0,0,end.transform.eulerAngles.z)*new Vector2(0,-0.0415f);
+			end.transform.position = end.transform.position+new Vector3(z.x,z.y,0);
+			hinge=end.GetComponent<HingeJoint2D>();
+			hinge.connectedAnchor=new Vector2(0,1-attachedDist-0.5f);
+		}
+	}
+	
+	void Revert()
+	{
+		if(chainCount>1)
+		{
+			attachedDist-=0.08f;
+			if(attachedDist<=0)
+			{
+				Destroy(last.go);
+				last=last.prev;
+				last.next=null;
 				
-				gravityVec = new Vector2(Camera.main.ScreenToWorldPoint(new Vector3(Screen.width*0.5f,Screen.height,0)).x,Camera.main.ScreenToWorldPoint(new Vector3(Screen.width*0.5f,Screen.height,0)).y)-new Vector2(transform.position.x,transform.position.y);
-				gravityVec/=gravityVec.magnitude;
-				gravityVec*=GameOptions.GRAVITY_VALUE;
-				Physics2D.gravity=-gravityVec;
+				hinge = end.GetComponent<HingeJoint2D>();
+				hinge.connectedBody=last.go.GetComponent<Rigidbody2D>();
+				hinge.connectedAnchor=new Vector2(0,-0.5f);
+				attachedDist=1;
+				attachedChainElement=last.go;
+				chainCount--;
+			}
+			else
+			{
+				last.go.transform.rotation=end.transform.rotation;
+				Vector2 f = Quaternion.Euler(0,0,end.transform.eulerAngles.z)*new Vector2(0,0.75f);
+				Vector2 z = Quaternion.Euler(0,0,end.transform.eulerAngles.z)*new Vector2(0,attachedDist/4.0f);
+				last.go.transform.position = end.transform.position+new Vector3(f.x,f.y,0)+new Vector3(z.x,z.y,0);
+				hinge=end.GetComponent<HingeJoint2D>();
+				hinge.connectedAnchor=new Vector2(0,1-attachedDist-0.5f);
 			}
 		}
-		lastTouch=currentTouch;
+	}
+	
+	void DrawLine()
+	{
+		line.SetPosition(0,new Vector3(end.transform.position.x,end.transform.position.y,2));
+		tmp=last;
+		int c=1;
+		line.SetVertexCount(chainCount+2);
+		while(tmp!=null)
+		{
+			line.SetPosition(c,new Vector3(tmp.go.transform.position.x,tmp.go.transform.position.y,2));
+			tmp=tmp.prev;
+			c++;
+		}
+		line.SetPosition(c,new Vector3(ground.transform.position.x,ground.transform.position.y,2));
+	}
+	
+	void FixedUpdate()
+	{
+		test1=new Vector2(end.transform.position.x,end.transform.position.y);
+		Debug.Log("Speed: "+Vector2.Distance(test2,test1));
+		test2=test1;
+		
+		
+		DrawLine();
+//		rope.velocityAccel = acceleration;
+//		rope.velocityDampen = dampening;
+//		
+//      	if (Input.GetKey(KeyCode.UpArrow))
+//      	{
+//      		rope.Velocity = maxSpeed;
+//      		rope.canResize=true;
+//      	}
+//  		else if (Input.GetKey(KeyCode.DownArrow))
+//  		{
+//  			rope.Velocity = -2*maxSpeed;
+//  			rope.canResize=true;
+//  		}
+//		else
+//      	{
+//      		rope.Velocity = 0;
+//      		rope.canResize=false;
+//      	}
+
+		if(Input.GetKey(KeyCode.DownArrow))
+		{
+			Expand();
+		}
+		if(Input.GetKey(KeyCode.UpArrow))
+			Revert();
+		
+		//if(Input.GetKeyDown(KeyCode.UpArrow))
+			//Revert();
+		
+		if(Input.GetKey(KeyCode.LeftArrow))
+			cameraAngle-=1.5f;
+		else if(Input.GetKey(KeyCode.RightArrow))
+			cameraAngle+=1.5f;
+		
+		Camera.main.transform.position=new Vector3(end.transform.position.x,end.transform.position.y,-10);
+		cameraAngle=Mathf.Repeat(cameraAngle,360.0f);
+		Camera.main.transform.localEulerAngles=new Vector3(0,0,cameraAngle);
+		gravityVec = new Vector2(Camera.main.ScreenToWorldPoint(new Vector3(Screen.width*0.5f,Screen.height*0.5f,0)).x,Camera.main.ScreenToWorldPoint(new Vector3(Screen.width*0.5f,Screen.height*0.5f,0)).y)-new Vector2(Camera.main.ScreenToWorldPoint(new Vector3(Screen.width*0.5f,Screen.height,0)).x,Camera.main.ScreenToWorldPoint(new Vector3(Screen.width*0.5f,Screen.height,0)).y);
+		gravityVec/=gravityVec.magnitude;
+		gravityVec*=GameOptions.GRAVITY_VALUE;
+		Physics2D.gravity=gravityVec;
+		
 	}
 }
